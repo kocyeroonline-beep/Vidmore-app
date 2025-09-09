@@ -1,0 +1,6 @@
+kivy==2.3.0
+kivymd==1.1.1
+flask==2.3.3
+requests==2.31.0
+pytube==15.0.0
+yt-dlp==2024.5.27

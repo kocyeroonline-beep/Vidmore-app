@@ -1,0 +1,198 @@
+#:import dp kivy.metrics.dp
+
+ScreenManager:
+    HomeScreen:
+        name: "home"
+    SearchScreen:
+        name: "search"
+    ResultsScreen:
+        name: "results"
+    PlayScreen:
+        name: "play"
+    MyFilesScreen:
+        name: "files"
+    MeScreen:
+        name: "me"
+    SettingsScreen:
+        name: "settings"
+    HistoryScreen:
+        name: "history"
+    ShortsScreen:
+        name: "shorts"
+    GameScreen:
+        name: "game"
+
+<HomeScreen>:
+    MDBoxLayout:
+        orientation: "vertical"
+
+        MDTopAppBar:
+            title: ""
+            left_action_items: [["menu", lambda x: None]]
+            md_bg_color: 0,1,0,1
+            specific_text_color: 1,1,1,1
+            Image:
+                source: "logo.png"
+                size_hint: None, None
+                size: dp(100), dp(40)
+
+        MDTextField:
+            id: search
+            hint_text: "Search videos"
+            icon_right: "magnify"
+            on_text_validate: app.search_videos(self.text)
+
+        ScrollView:
+            MDGridLayout:
+                id: recommended
+                cols: 2
+                adaptive_height: True
+                spacing: dp(8)
+                padding: dp(8)
+
+        MDBottomNavigation:
+            MDBottomNavigationItem:
+                name: "home"
+                text: "Home"
+                icon: "home"
+
+            MDBottomNavigationItem:
+                name: "shorts"
+                text: "Shorts"
+                icon: "movie"
+
+            MDBottomNavigationItem:
+                name: "game"
+                text: "Games"
+                icon: "gamepad"
+
+            MDBottomNavigationItem:
+                name: "files"
+                text: "My Files"
+                icon: "download"
+
+            MDBottomNavigationItem:
+                name: "me"
+                text: "Me"
+                icon: "account"
+
+<SearchScreen>:
+    MDBoxLayout:
+        orientation: "vertical"
+        MDLabel:
+            text: "Search History + Top Searches"
+        MDRaisedButton:
+            text: "Back"
+            on_release: app.root.current = "home"
+
+<ResultsScreen>:
+    ScrollView:
+        MDGridLayout:
+            id: results_grid
+            cols: 2
+            adaptive_height: True
+            spacing: dp(8)
+            padding: dp(8)
+
+<PlayScreen>:
+    ScrollView:
+        MDList:
+            id: play_box
+
+<MyFilesScreen>:
+    MDBoxLayout:
+        orientation: "vertical"
+        MDTabs:
+            Tab:
+                title: "Downloads"
+                MDLabel:
+                    text: "All downloads"
+            Tab:
+                title: "Video"
+                MDLabel:
+                    text: "Videos"
+            Tab:
+                title: "Music"
+                MDLabel:
+                    text: "Music"
+            Tab:
+                title: "Private"
+                MDLabel:
+                    text: "Private files"
+            Tab:
+                title: "Storage"
+                MDLabel:
+                    text: "Phone Storage"
+
+<MeScreen>:
+    ScrollView:
+        MDList:
+            OneLineIconListItem:
+                text: "History"
+                IconLeftWidget:
+                    icon: "history"
+                on_release: app.root.current="history"
+
+            OneLineIconListItem:
+                text: "Downloads"
+                IconLeftWidget:
+                    icon: "download"
+                on_release: app.root.current="files"
+
+            OneLineIconListItem:
+                text: "Settings"
+                IconLeftWidget:
+                    icon: "cog"
+                on_release: app.root.current="settings"
+
+            OneLineIconListItem:
+                text: "About"
+                IconLeftWidget:
+                    icon: "information"
+
+<SettingsScreen>:
+    MDBoxLayout:
+        orientation: "vertical"
+        MDLabel:
+            text: "Settings (like Vidmate)"
+
+<HistoryScreen>:
+    MDBoxLayout:
+        orientation: "vertical"
+        MDLabel:
+            text: "Watch & Search History"
+
+<ShortsScreen>:
+    ScrollView:
+        MDList:
+            OneLineListItem:
+                text: "Trending Shorts 1"
+            OneLineListItem:
+                text: "Trending Shorts 2"
+
+<GameScreen>:
+    MDBoxLayout:
+        orientation: "vertical"
+        MDLabel:
+            text: "Games Section (coming soon)"
+
+<VideoCard@MDCard>:
+    title: ""
+    url: ""
+    thumbnail_url: ""
+    orientation: "vertical"
+    size_hint_y: None
+    height: dp(220)
+    padding: dp(4)
+    Image:
+        source: root.thumbnail_url
+        size_hint_y: None
+        height: dp(140)
+    MDLabel:
+        text: root.title
+        size_hint_y: None
+        height: dp(40)
+        halign: "center"
+    MDRaisedButton:
+        text: "▶ Play"
+        on_release: app.show_video({"title": root.title, "url": root.url, "thumbnail": root.thumbnail_url, "channel": "Channel", "time": "N/A"})
