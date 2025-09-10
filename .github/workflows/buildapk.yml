@@ -1,10 +1,10 @@
 name: Build APK
 
 on:
-  workflow_dispatch:   # Ibi bituma ushobora gutangiza build na button kuri GitHub
+  workflow_dispatch:
   push:
     branches:
-      - main           # Byubaka buri gihe uko ushyize code kuri branch main
+      - main
 
 jobs:
   build:
@@ -45,7 +45,7 @@ jobs:
           buildozer android debug
 
       - name: Upload APK Artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v3
         with:
           name: Vidmore-APK
           path: bin/*.apk
