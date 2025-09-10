@@ -1,0 +1,51 @@
+name: Build APK
+
+on:
+  workflow_dispatch:   # Ibi bituma ushobora gutangiza build na button kuri GitHub
+  push:
+    branches:
+      - main           # Byubaka buri gihe uko ushyize code kuri branch main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+
+      - name: Set up JDK 11
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'temurin'
+          java-version: '11'
+
+      - name: Install Android SDK
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y openjdk-11-jdk unzip wget
+          wget https://dl.google.com/android/repository/commandlinetools-linux-9477386_latest.zip -O cmdline-tools.zip
+          mkdir -p $HOME/android-sdk/cmdline-tools
+          unzip -q cmdline-tools.zip -d $HOME/android-sdk/cmdline-tools
+          yes | $HOME/android-sdk/cmdline-tools/cmdline-tools/bin/sdkmanager --sdk_root=$HOME/android-sdk --licenses
+          $HOME/android-sdk/cmdline-tools/cmdline-tools/bin/sdkmanager --sdk_root=$HOME/android-sdk \
+            "platform-tools" "platforms;android-31" "build-tools;31.0.0"
+
+          echo "ANDROID_HOME=$HOME/android-sdk" >> $GITHUB_ENV
+          echo "PATH=$HOME/android-sdk/platform-tools:$PATH" >> $GITHUB_ENV
+
+      - name: Install Python & Buildozer
+        run: |
+          sudo apt-get install -y python3 python3-pip python3-setuptools git zip
+          pip install --upgrade pip
+          pip install buildozer cython
+
+      - name: Build APK
+        run: |
+          buildozer android debug
+
+      - name: Upload APK Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Vidmore-APK
+          path: bin/*.apk
