@@ -33,6 +33,9 @@ android.ndk = 25b
 android.archs = arm64-v8a,armeabi-v7a
 android.logcat_filters = *:S python:D
 
+# Forcing build-tools version kugirango AIDL iboneke
+android.build_tools_version = 31.0.0
+
 [buildozer]
 log_level = 2
 warn_on_root = 1
