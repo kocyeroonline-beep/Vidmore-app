@@ -35,7 +35,7 @@ jobs:
           buildozer -v android release
 
       - name: Upload AAB Artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v5
         with:
           name: Vidmore-AAB
           path: bin/*.aab
