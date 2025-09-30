@@ -38,7 +38,7 @@ jobs:
           unzip cmdline-tools.zip -d $HOME/android-sdk/cmdline-tools
           mv $HOME/android-sdk/cmdline-tools/cmdline-tools $HOME/android-sdk/cmdline-tools/latest
           echo "ANDROID_HOME=$HOME/android-sdk" >> $GITHUB_ENV
-          echo "$HOME/android-sdk/cmdline-tools/latest/bin" >> $GITHUB_PATH
+          echo "PATH=$HOME/android-sdk/cmdline-tools/latest/bin:$HOME/android-sdk/platform-tools:$HOME/android-sdk/build-tools/31.0.0:$PATH" >> $GITHUB_ENV
 
       - name: Accept Android SDK Licenses
         run: yes | sdkmanager --licenses
@@ -47,16 +47,13 @@ jobs:
 
       - name: Install Build-Tools and Platforms
         run: |
-          sdkmanager "platforms;android-33"
-          sdkmanager "build-tools;31.0.0"
-          echo "$HOME/android-sdk/build-tools/31.0.0" >> $GITHUB_PATH
+          yes | sdkmanager "platforms;android-33"
+          yes | sdkmanager "build-tools;31.0.0"
         env:
           ANDROID_HOME: ${{ env.ANDROID_HOME }}
 
       - name: Build APK
         run: buildozer -v android debug --apk
-        env:
-          ANDROID_HOME: ${{ env.ANDROID_HOME }}
 
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
