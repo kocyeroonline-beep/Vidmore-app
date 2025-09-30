@@ -47,13 +47,15 @@ jobs:
 
       - name: Install Build-Tools and Platforms
         run: |
+          yes | sdkmanager "platform-tools"
+          yes | sdkmanager "emulator"
           yes | sdkmanager "platforms;android-33"
           yes | sdkmanager "build-tools;31.0.0"
         env:
           ANDROID_HOME: ${{ env.ANDROID_HOME }}
 
       - name: Build APK
-        run: buildozer -v android debug --apk
+        run: buildozer -v android debug --apk 2>&1
 
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
