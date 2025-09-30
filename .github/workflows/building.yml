@@ -1,0 +1,65 @@
+name: build
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+
+      - name: Set up JDK 11
+        uses: actions/setup-java@v3
+        with:
+          distribution: temurin
+          java-version: 11
+
+      - name: Install dependencies
+        run: |
+          sudo apt update
+          sudo apt install -y python3-pip git zip unzip openjdk-11-jdk \
+            autoconf automake pkg-config libffi-dev libssl-dev \
+            libsqlite3-dev libjpeg-dev libpng-dev wget
+
+          pip install --upgrade pip
+          pip install cython buildozer
+
+      - name: Install Android SDK command-line tools
+        run: |
+          mkdir -p $HOME/android-sdk/cmdline-tools
+          cd $HOME/android-sdk/cmdline-tools
+          wget https://dl.google.com/android/repository/commandlinetools-linux-9477386_latest.zip -O cmdline-tools.zip
+          unzip cmdline-tools.zip -d $HOME/android-sdk/cmdline-tools
+          mv $HOME/android-sdk/cmdline-tools/cmdline-tools $HOME/android-sdk/cmdline-tools/latest
+          echo "ANDROID_HOME=$HOME/android-sdk" >> $GITHUB_ENV
+          echo "$HOME/android-sdk/cmdline-tools/latest/bin" >> $GITHUB_PATH
+
+      - name: Accept Android SDK Licenses
+        run: yes | sdkmanager --licenses
+        env:
+          ANDROID_HOME: ${{ env.ANDROID_HOME }}
+
+      - name: Install Build-Tools and Platforms
+        run: |
+          sdkmanager "platforms;android-33"
+          sdkmanager "build-tools;33.0.2"
+          echo "$HOME/android-sdk/build-tools/33.0.2" >> $GITHUB_PATH
+        env:
+          ANDROID_HOME: ${{ env.ANDROID_HOME }}
+
+      - name: Build APK
+        run: buildozer -v android debug --apk
+        env:
+          ANDROID_HOME: ${{ env.ANDROID_HOME }}
+
+      - name: Upload APK Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Vidmore-APK
+          path: bin/*.apk
