@@ -49,7 +49,7 @@ jobs:
         run: |
           sdkmanager "platforms;android-33"
           sdkmanager "build-tools;33.0.2"
-          echo "$HOME/android-sdk/build-tools/33.0.2" >> $GITHUB_PATH
+          echo "$HOME/android-sdk/build-tools/31.0.0" >> $GITHUB_PATH
         env:
           ANDROID_HOME: ${{ env.ANDROID_HOME }}
 
