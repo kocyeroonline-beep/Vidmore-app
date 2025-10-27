@@ -5,67 +5,73 @@ on:
     branches:
       - main
   pull_request:
+  workflow_dispatch:
 
 jobs:
   build:
     runs-on: ubuntu-latest
+    env:
+      ANDROID_SDK_ROOT: ${{ runner.temp }}/android-sdk
 
     steps:
-      - name: Checkout Repository
+      - name: Checkout repository
         uses: actions/checkout@v5
 
       - name: Set up Python
         uses: actions/setup-python@v6
         with:
-          python-version: '3.10'
+          python-version: "3.10"
 
-      - name: Install system dependencies
-        run: |
-          sudo apt update
-          sudo apt install -y python3-pip git zip unzip openjdk-11-jdk \
-            autoconf automake pkg-config libffi-dev libssl-dev \
-            libsqlite3-dev libjpeg-dev libpng-dev wget
+      - name: Set up Java (required by Android toolchain)
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "11"
 
-      - name: Install Buildozer & Cython
+      - name: Install system packages
         run: |
-          pip install --upgrade pip
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            git zip unzip wget build-essential autoconf automake pkg-config \
+            libffi-dev libssl-dev libsqlite3-dev libjpeg-dev libpng-dev
+
+      - name: Install pip packages (Buildozer & Cython)
+        run: |
+          python -m pip install --upgrade pip setuptools wheel
           pip install cython buildozer
 
-      - name: Set ANDROID_HOME
+      - name: Install Android command line tools
         run: |
-          echo "ANDROID_HOME=$HOME/android-sdk" >> $GITHUB_ENV
-          echo "ANDROID_SDK_ROOT=$HOME/android-sdk" >> $GITHUB_ENV
-          mkdir -p $HOME/android-sdk
-
-      - name: Install Android SDK
-        run: |
-          cd $HOME/android-sdk
-          wget https://dl.google.com/android/repository/commandlinetools-linux-9477386_latest.zip -O cmdline-tools.zip
+          SDK_ROOT="${ANDROID_SDK_ROOT}"
+          mkdir -p "${SDK_ROOT}"
+          cd "${SDK_ROOT}"
+          wget -q https://dl.google.com/android/repository/commandlinetools-linux-9477386_latest.zip -O cmdline-tools.zip
           unzip -q cmdline-tools.zip
           mkdir -p cmdline-tools/latest
           mv cmdline-tools/* cmdline-tools/latest/ || true
-          echo "$HOME/android-sdk/cmdline-tools/latest/bin" >> $GITHUB_PATH
-          echo "$HOME/android-sdk/platform-tools" >> $GITHUB_PATH
 
-      - name: Accept Licenses
-        run: yes | sdkmanager --licenses
-
-      - name: Install SDK Packages
+      - name: Add Android tools to PATH
         run: |
-          sdkmanager "platforms;android-33" "platform-tools" "build-tools;31.0.0"
+          echo "${ANDROID_SDK_ROOT}/cmdline-tools/latest/bin" >> $GITHUB_PATH
+          echo "${ANDROID_SDK_ROOT}/platform-tools" >> $GITHUB_PATH
+          echo "${ANDROID_SDK_ROOT}/build-tools" >> $GITHUB_PATH
 
-      - name: Clean old SDK
+      - name: Install SDK packages and accept licenses
+        run: |
+          SDKMANAGER="${ANDROID_SDK_ROOT}/cmdline-tools/latest/bin/sdkmanager"
+          chmod +x "$SDKMANAGER"
+          yes | "$SDKMANAGER" --sdk_root="$ANDROID_SDK_ROOT" "platform-tools" "platforms;android-33" "build-tools;33.0.0"
+
+      - name: Clean old Buildozer Android platform
         run: rm -rf $HOME/.buildozer/android/platform
 
-      - name: Add build-tools to PATH (fix AIDL)
+      - name: Build APK (Buildozer)
         run: |
-          echo "$HOME/android-sdk/build-tools/31.0.0" >> $GITHUB_PATH
-          echo "$HOME/android-sdk/platform-tools" >> $GITHUB_PATH
+          export ANDROID_HOME="${ANDROID_SDK_ROOT}"
+          export ANDROID_SDK_ROOT="${ANDROID_SDK_ROOT}"
+          buildozer -v android debug
 
-      - name: Build APK
-        run: buildozer -v android debug
-
-      - name: Upload APK Artifact
+      - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
           name: Vidmore-APK
