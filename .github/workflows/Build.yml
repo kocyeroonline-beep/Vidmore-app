@@ -26,43 +26,45 @@ jobs:
             autoconf automake pkg-config libffi-dev libssl-dev \
             libsqlite3-dev libjpeg-dev libpng-dev wget
 
+      - name: Set JAVA_HOME
+        run: |
+          echo "JAVA_HOME=/usr/lib/jvm/java-11-openjdk-amd64" >> $GITHUB_ENV
+          echo "ANDROID_HOME=$HOME/.buildozer/android/platform/android-sdk" >> $GITHUB_ENV
+          echo "ANDROID_SDK_ROOT=$HOME/.buildozer/android/platform/android-sdk" >> $GITHUB_ENV
+          mkdir -p $HOME/.buildozer/android/platform/android-sdk
+
       - name: Install Buildozer & Cython
         run: |
           pip install --upgrade pip
           pip install cython buildozer
 
-      - name: Set ANDROID_HOME to Buildozer path
-        run: |
-          echo "ANDROID_HOME=$HOME/.buildozer/android/platform/android-sdk" >> $GITHUB_ENV
-          echo "ANDROID_SDK_ROOT=$HOME/.buildozer/android/platform/android-sdk" >> $GITHUB_ENV
-          mkdir -p $HOME/.buildozer/android/platform/android-sdk
-
-      - name: Install Android SDK (into Buildozer path)
+      - name: Install Android cmdline-tools (into Buildozer path)
         run: |
           cd $HOME/.buildozer/android/platform/android-sdk
           wget https://dl.google.com/android/repository/commandlinetools-linux-9477386_latest.zip -O cmdline-tools.zip
           unzip -q cmdline-tools.zip
           mkdir -p cmdline-tools/latest
           mv cmdline-tools/* cmdline-tools/latest/ || true
+          # Add cmdline-tools and platform-tools to PATH for subsequent steps
           echo "$HOME/.buildozer/android/platform/android-sdk/cmdline-tools/latest/bin" >> $GITHUB_PATH
           echo "$HOME/.buildozer/android/platform/android-sdk/platform-tools" >> $GITHUB_PATH
 
       - name: Accept Licenses
-        env:
-          ANDROID_SDK_ROOT: ${{ env.ANDROID_SDK_ROOT }}
         run: |
+          # Ensure sdkmanager is available on PATH in this step (we added it to GITHUB_PATH)
           yes | $HOME/.buildozer/android/platform/android-sdk/cmdline-tools/latest/bin/sdkmanager --sdk_root=$HOME/.buildozer/android/platform/android-sdk --licenses
 
       - name: Install SDK Packages
         run: |
-          $HOME/.buildozer/android/platform/android-sdk/cmdline-tools/latest/bin/sdkmanager --sdk_root=$HOME/.buildozer/android/platform/android-sdk "platforms;android-33" "platform-tools" "build-tools;31.0.0"
-
-      - name: Clean old SDK
-        run: rm -rf $HOME/.buildozer/android/platform
+          # Install platform, platform-tools and explicit build-tools that Buildozer/p4a may require.
+          # NOTE: change build-tools version if you want to pin to a different one (e.g., 31.0.0).
+          $HOME/.buildozer/android/platform/android-sdk/cmdline-tools/latest/bin/sdkmanager --sdk_root=$HOME/.buildozer/android/platform/android-sdk "platforms;android-33" "platform-tools" "build-tools;36.1.0" "cmdline-tools;latest"
+          # Make sure licenses are accepted after package install
+          yes | $HOME/.buildozer/android/platform/android-sdk/cmdline-tools/latest/bin/sdkmanager --sdk_root=$HOME/.buildozer/android/platform/android-sdk --licenses
 
       - name: Add build-tools to PATH (fix AIDL)
         run: |
-          echo "$HOME/.buildozer/android/platform/android-sdk/build-tools/31.0.0" >> $GITHUB_PATH
+          echo "$HOME/.buildozer/android/platform/android-sdk/build-tools/36.1.0" >> $GITHUB_PATH
           echo "$HOME/.buildozer/android/platform/android-sdk/platform-tools" >> $GITHUB_PATH
 
       - name: Build APK
