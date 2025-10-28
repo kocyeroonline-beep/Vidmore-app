@@ -37,6 +37,43 @@ jobs:
         run: |
           pip install --upgrade pip
           pip install cython buildozer
+          # Insert the following step before your build step in .github/workflows/Build.yml
+- name: Install Android commandline tools and sdkmanager (for Buildozer)
+  run: |
+    set -e
+    sudo apt-get update
+    sudo apt-get install -y openjdk-11-jdk wget unzip
+
+    # Where Buildozer expects the SDK
+    ANDROID_ROOT="$HOME/.buildozer/android/platform/android-sdk"
+    mkdir -p "$ANDROID_ROOT"
+
+    # Download and install commandline tools
+    TMP="/tmp/cmdline-tools"
+    mkdir -p "$TMP"
+    wget -q https://dl.google.com/android/repository/commandlinetools-linux-9477386_latest.zip -O "$TMP/cmdline-tools.zip"
+    unzip -q "$TMP/cmdline-tools.zip" -d "$TMP"
+    # place under cmdline-tools/latest
+    mkdir -p "$ANDROID_ROOT/cmdline-tools"
+    mv "$TMP/cmdline-tools" "$ANDROID_ROOT/cmdline-tools/latest"
+
+    # Ensure platform-tools and build-tools and platform are installed via sdkmanager
+    export ANDROID_HOME="$ANDROID_ROOT"
+    export ANDROID_SDK_ROOT="$ANDROID_ROOT"
+    export PATH="$ANDROID_ROOT/cmdline-tools/latest/bin:$ANDROID_ROOT/platform-tools:$PATH"
+
+    # Create a small wrapper at the path Buildozer checks for (/tools/bin/sdkmanager)
+    mkdir -p "$ANDROID_ROOT/tools/bin"
+    cat > "$ANDROID_ROOT/tools/bin/sdkmanager" <<'EOF'
+#!/usr/bin/env bash
+# wrapper that forwards to cmdline-tools sdkmanager
+exec "$HOME/.buildozer/android/platform/android-sdk/cmdline-tools/latest/bin/sdkmanager" --sdk_root="$HOME/.buildozer/android/platform/android-sdk" "$@"
+EOF
+    chmod +x "$ANDROID_ROOT/tools/bin/sdkmanager"
+
+    # Accept licenses and install minimal packages (adjust API level / build-tools as needed)
+    yes | "$ANDROID_ROOT/cmdline-tools/latest/bin/sdkmanager" --sdk_root="$ANDROID_ROOT" --licenses
+    "$ANDROID_ROOT/cmdline-tools/latest/bin/sdkmanager" --sdk_root="$ANDROID_ROOT" "platform-tools" "platforms;android-31" "build-tools;31.0.0" "ndk;23.1.7779620"
 
       - name: Install Android cmdline-tools (into Buildozer path)
         run: |
